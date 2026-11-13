@@ -1,0 +1,14 @@
+[
+  {"id": "guest_01", "ageRange": "20대 초반", "look": "둥글고 풍성한 곱슬머리, 글자가 적힌 검은 반팔 티셔츠", "impression": "차분하지만 지쳐 보임", "expressions": ["worried", "relieved"]},
+  {"id": "guest_02", "ageRange": "20대 후반~30대 초반", "look": "짧게 올린 검은 머리, 동그란 안경, 단추 달린 흰 셔츠", "impression": "단정하지만 긴장한 인상", "expressions": ["worried", "relieved"]},
+  {"id": "guest_03", "ageRange": "20대", "look": "턱선 길이의 밝은 단발, 하늘색 줄무늬 민소매 상의, 한 손을 가슴께에 올림", "impression": "말을 꺼낼지 망설이는 모습", "expressions": ["worried", "relieved"]},
+  {"id": "guest_04", "ageRange": "20대 초반", "look": "위로 묶은 짧은 꼬임 머리, 검은 민소매 상의", "impression": "말하려다 멈춘 듯한 표정", "expressions": ["worried", "relieved"]},
+  {"id": "guest_05", "ageRange": "40대", "look": "숱이 적은 짧은 머리, 동그란 안경, 노란 셔츠", "impression": "걱정이 많아 보이는 인상", "expressions": ["worried", "relieved"]},
+  {"id": "guest_06", "ageRange": "20대 초반", "look": "비니 모자, 하늘색 후드티", "impression": "머뭇거리며 눈치를 보는 인상", "expressions": ["worried", "relieved"]},
+  {"id": "guest_07", "ageRange": "20대", "look": "길게 늘어뜨린 검은 생머리, 검은 반팔 상의", "impression": "시선을 피하는 조용한 인상", "expressions": ["worried", "relieved"]},
+  {"id": "guest_08", "ageRange": "20대 중반", "look": "짧은 곱슬머리, 하늘색 재킷 안에 줄무늬 티셔츠", "impression": "속상한 마음을 참는 표정", "expressions": ["worried", "relieved"]},
+  {"id": "guest_09", "ageRange": "20대 초반", "look": "옆으로 넘긴 짧은 머리, 초록 후드티, 손에 게임 컨트롤러", "impression": "당황해서 눈이 커진 표정", "expressions": ["worried", "relieved"]},
+  {"id": "guest_10", "ageRange": "20대 후반", "look": "어깨 위 밝은 단발, 큰 안경, 털 칼라가 달린 검은 재킷 안에 분홍 티셔츠", "impression": "답답한 마음이 터져 나오는 표정", "expressions": ["worried", "relieved"]},
+  {"id": "guest_11", "ageRange": "30대", "look": "위로 넘긴 짧은 검은 머리, 하늘색 재킷 안에 검은 티셔츠", "impression": "시무룩하게 고개를 숙인 인상", "expressions": ["worried", "relieved"]},
+  {"id": "guest_12", "ageRange": "20대 중반", "look": "정수리에 묶은 올림머리, 보라색 점무늬 셔츠", "impression": "손짓하며 하소연하는 모습", "expressions": ["worried", "relieved"]}
+]

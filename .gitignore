@@ -1,0 +1,15 @@
+# 공통
+node_modules/
+.env
+.env*.local
+.DS_Store
+npm-debug.*
+
+# 앱 (Expo)
+app/.expo/
+app/dist/
+app/web-build/
+
+# 서버
+server/sessions/
+server/logs/
