@@ -1,8 +1,10 @@
 import { router } from 'expo-router';
+
 import { ComponentRef, useRef, useState } from 'react';
 import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { PrimaryButton } from '@/components/buttons';
 import { guestImage } from '@/data/guests';
 import { useSession } from '@/state/session';
 import { C } from '@/theme/colors';
@@ -46,7 +48,7 @@ export default function TalkScreen() {
     setTimeout(() => scroll.current?.scrollToEnd({ animated: true }), 50);
   };
 
-  const finish = () => router.push(s.highlight ? '/mirror-pick' : '/closing');
+  const finish = () => router.push('/farewell');
 
   return (
     <SafeAreaView style={styles.root}>
@@ -81,10 +83,14 @@ export default function TalkScreen() {
               </View>
             ),
           )}
-          {done ? <Text style={[styles.caption, { textAlign: 'center', marginTop: 8 }]}>손님이 마무리를 기다려요. 오른쪽 위 '마무리'를 눌러 주세요.</Text> : null}
         </ScrollView>
 
-        {!done ? (
+        {done ? (
+          <View style={styles.composer}>
+            <Text style={styles.ask}>손님이 이야기를 마치고 기다리고 있어요.</Text>
+            <PrimaryButton label="마무리하기" onPress={finish} />
+          </View>
+        ) : (
           <View style={styles.composer}>
             {showInput ? (
               <>
@@ -118,7 +124,7 @@ export default function TalkScreen() {
               </View>
             )}
           </View>
-        ) : null}
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -129,7 +135,7 @@ const styles = StyleSheet.create({
   header: { height: 64, paddingLeft: 16, paddingRight: 8, flexDirection: 'row', alignItems: 'center', gap: 10, borderBottomWidth: 1, borderBottomColor: C.line },
   avatar: { width: 34, height: 44, borderRadius: 22, borderWidth: 2, borderColor: '#F2F8FF', backgroundColor: '#DCEBF8', overflow: 'hidden', boxShadow: '0 0 12px rgba(170,215,255,0.55)' },
   name: { fontSize: 15, fontWeight: '700', color: C.text },
-  meta: { fontSize: 12, color: C.sub },
+  meta: { fontSize: 14, color: C.sub },
   pill: { height: 44, paddingHorizontal: 12, borderRadius: 22, borderWidth: 1, borderColor: C.borderStrong, justifyContent: 'center' },
   pillText: { fontSize: 14, color: C.text },
   textBtn: { minHeight: 44, paddingHorizontal: 10, alignItems: 'center', justifyContent: 'center' },
@@ -137,9 +143,9 @@ const styles = StyleSheet.create({
   guestBubble: { maxWidth: 280, padding: 12, paddingHorizontal: 14, borderRadius: 18, borderTopLeftRadius: 4, backgroundColor: '#252C33', borderWidth: 1, borderColor: C.border, color: C.text, fontSize: 15, lineHeight: 23 },
   meBubble: { maxWidth: 280, padding: 12, paddingHorizontal: 14, borderRadius: 18, borderTopRightRadius: 4, backgroundColor: '#343D46', color: C.text, fontSize: 15, lineHeight: 23, overflow: 'hidden' },
   meHighlight: { backgroundColor: '#E3F0FC', color: C.onGlass, boxShadow: '0 0 22px rgba(170,215,255,0.5)' },
-  caption: { fontSize: 11, color: C.sub },
+  caption: { fontSize: 14, color: C.sub },
   composer: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16, borderTopWidth: 1, borderTopColor: C.line, backgroundColor: '#20262C', gap: 8 },
-  ask: { fontSize: 12, color: C.muted },
+  ask: { fontSize: 14, color: C.muted },
   input: { flex: 1, minHeight: 52, maxHeight: 120, paddingHorizontal: 16, paddingVertical: 14, borderRadius: 26, borderWidth: 1.5, borderColor: '#CFE3F5', backgroundColor: 'rgba(234,244,255,0.06)', color: C.text, fontSize: 15 },
   send: { width: 52, height: 52, borderRadius: 26, backgroundColor: C.glass, alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 16px rgba(170,215,255,0.45)' },
   choice: { minHeight: 48, paddingHorizontal: 16, borderRadius: 24, borderWidth: 1, borderColor: C.borderStrong, justifyContent: 'center' },

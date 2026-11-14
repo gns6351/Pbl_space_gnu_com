@@ -6,22 +6,26 @@ import { PrimaryButton } from '@/components/buttons';
 import { Mirror } from '@/components/mirror';
 import { Screen } from '@/components/screen';
 import { guestImage, guests, pickGuest } from '@/data/guests';
+import { guestIdOfPlayer } from '@/data/players';
+import { useProfile } from '@/state/profile';
 import { useSession } from '@/state/session';
 import { C } from '@/theme/colors';
 
 // 03 손님 맞이 (FR-03). 지금은 일러스트만 무작위로 고르고, 이름·고민은 서버 연동 후 채운다.
 export default function GuestScreen() {
   const { s, set } = useSession();
+  const { playerId } = useProfile();
+  const mine = guestIdOfPlayer(playerId); // 내 캐릭터와 같은 손님은 나오지 않게
 
   useEffect(() => {
-    if (!s.guestId) set({ guestId: pickGuest().id });
-  }, [s.guestId, set]);
+    if (!s.guestId) set({ guestId: pickGuest([mine]).id });
+  }, [s.guestId, set, mine]);
 
   const guest = guests.find((g) => g.id === s.guestId);
 
   const regenerate = () => {
     if (s.regenLeft <= 0) return;
-    set({ guestId: pickGuest(s.guestId ?? undefined).id, regenLeft: s.regenLeft - 1 });
+    set({ guestId: pickGuest([mine, s.guestId]).id, regenLeft: s.regenLeft - 1 });
   };
 
   return (
@@ -58,9 +62,9 @@ const styles = StyleSheet.create({
   lead: { fontSize: 14, color: C.muted, textAlign: 'center' },
   guest: { width: '100%', height: '92%' },
   name: { fontSize: 22, fontWeight: '700', color: C.text },
-  meta: { fontSize: 13, color: C.sub },
+  meta: { fontSize: 14, color: C.sub },
   card: { padding: 16, borderRadius: 14, borderWidth: 1, borderColor: C.border, backgroundColor: C.panel, gap: 6 },
-  cardLabel: { fontSize: 12, fontWeight: '700', color: C.ice },
+  cardLabel: { fontSize: 14, fontWeight: '700', color: C.ice },
   cardText: { fontSize: 14, lineHeight: 22, color: C.text },
   regen: { height: 44, alignItems: 'center', justifyContent: 'center' },
   regenText: { fontSize: 14, color: C.ice },

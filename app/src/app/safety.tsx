@@ -24,11 +24,11 @@ export default function SafetyScreen() {
       </View>
       <Pressable accessibilityRole="link" onPress={() => Linking.openURL('tel:109')} style={styles.primaryLine}>
         <Text style={{ fontSize: 16, fontWeight: '700', color: C.onGlass }}>자살예방상담전화 109</Text>
-        <Text style={{ fontSize: 13, color: '#3E5366' }}>24시간 상담</Text>
+        <Text style={{ fontSize: 14, color: '#3E5366' }}>24시간 상담</Text>
       </Pressable>
       <Pressable accessibilityRole="link" onPress={() => Linking.openURL('tel:15770199')} style={styles.line}>
         <Text style={{ fontSize: 16, fontWeight: '700', color: C.text }}>정신건강위기상담 1577-0199</Text>
-        <Text style={{ fontSize: 13, color: C.muted }}>[연락처 최종 확인 필요]</Text>
+        <Text style={{ fontSize: 14, color: C.muted }}>[연락처 최종 확인 필요]</Text>
       </Pressable>
       <Text style={styles.note}>이번 상담은 여기서 끝나요. 같은 판의 역할극은 다시 이어지지 않아요.</Text>
     </Screen>
@@ -40,5 +40,5 @@ const styles = StyleSheet.create({
   body: { fontSize: 15, lineHeight: 25, color: '#C8D3DC' },
   primaryLine: { minHeight: 64, paddingVertical: 12, paddingHorizontal: 18, borderRadius: 16, backgroundColor: C.glass, justifyContent: 'center', gap: 2 },
   line: { minHeight: 64, paddingVertical: 12, paddingHorizontal: 18, borderRadius: 16, borderWidth: 1, borderColor: C.borderStrong, justifyContent: 'center', gap: 2 },
-  note: { fontSize: 13, lineHeight: 21, color: C.muted },
+  note: { fontSize: 14, lineHeight: 21, color: C.muted },
 });

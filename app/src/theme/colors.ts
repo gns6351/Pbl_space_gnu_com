@@ -7,8 +7,8 @@ export const C = {
   border: '#3A434C',
   borderStrong: '#4A545E',
   text: '#EEF2F5',
-  muted: '#A7B1BA',
-  sub: '#8E99A3',
+  muted: '#BCC6CF',
+  sub: '#A9B4BE',
   ice: '#9CCBFF', // 강조 글자
   glass: '#EAF4FF', // 주요 버튼 배경
   onGlass: '#13202B', // 거울·버튼 위 글자

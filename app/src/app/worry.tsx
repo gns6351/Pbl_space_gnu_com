@@ -29,7 +29,7 @@ export default function WorryScreen() {
   };
 
   return (
-    <Screen step="접수 2/2" footer={<PrimaryButton label="손님 맞이하기" onPress={next} disabled={!valid} />}>
+    <Screen step="접수" footer={<PrimaryButton label="손님 맞이하기" onPress={next} disabled={!valid} />}>
       <View style={{ gap: 6 }}>
         <Text style={styles.title}>요즘 마음에 걸리는 일이 있나요?</Text>
         <Text style={styles.body}>적은 걱정은 거울에 비친 손님이 되어 찾아올 거예요.</Text>
@@ -83,7 +83,7 @@ export default function WorryScreen() {
 const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: '700', color: C.text },
   body: { fontSize: 14, lineHeight: 22, color: C.muted },
-  label: { fontSize: 13, fontWeight: '500', color: C.muted },
+  label: { fontSize: 14, fontWeight: '500', color: C.muted },
   input: {
     height: 150,
     padding: 16,
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   row: { flexDirection: 'row', justifyContent: 'space-between' },
-  small: { fontSize: 12, color: C.sub },
+  small: { fontSize: 14, color: C.sub },
   example: {
     minHeight: 56,
     paddingVertical: 12,
@@ -110,5 +110,5 @@ const styles = StyleSheet.create({
   },
   exampleOn: { borderColor: '#CFE3F5', borderWidth: 1.5, backgroundColor: 'rgba(234,244,255,0.1)', boxShadow: '0 0 16px rgba(170,215,255,0.25)' },
   exampleKey: { fontSize: 14, fontWeight: '700', color: C.text },
-  exampleText: { fontSize: 13, color: C.muted },
+  exampleText: { fontSize: 14, color: C.muted },
 });
