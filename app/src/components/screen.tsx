@@ -4,6 +4,8 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { C } from '@/theme/colors';
+import { CrayonFrame, crayonLine, plain } from '@/components/crayon';
+import { CRAYON } from '@/theme/fonts';
 
 type Props = {
   step: string;
@@ -22,7 +24,8 @@ export function Screen({ step, action = '그만하기', onAction, footer, childr
       style={[styles.root, { backgroundImage: `radial-gradient(ellipse 90% 45% at ${glowAt}, ${C.bgGlow} 0%, ${C.bg} 72%)` }]}>
       <View style={styles.header}>
         <Text style={styles.step}>{step}</Text>
-        <Pressable accessibilityRole="button" onPress={quit} style={styles.pill} hitSlop={4}>
+        <Pressable accessibilityRole="button" onPress={quit} style={[styles.pill, CRAYON && plain]} hitSlop={4}>
+          {CRAYON ? <CrayonFrame fill="rgba(255,255,255,0.04)" stroke={crayonLine} strokeWidth={1.8} radius={22} seed={action.length} grainOpacity={0.1} grainTone="light" /> : null}
           <Text style={styles.pillText}>{action}</Text>
         </Pressable>
       </View>

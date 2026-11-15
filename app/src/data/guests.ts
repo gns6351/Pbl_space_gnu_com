@@ -34,8 +34,9 @@ export function guestImage(id: string, expression: Expression = 'worried') {
   return images[id]?.[expression] ?? images.guest_01.worried;
 }
 
-// 직전에 나온 손님은 빼고 무작위로 고른다 (다른 손님 맞이하기용)
-export function pickGuest(excludeId?: string): GuestLook {
-  const pool = guests.filter((g) => g.id !== excludeId);
-  return pool[Math.floor(Math.random() * pool.length)];
+// 제외 목록(내 캐릭터와 같은 그림, 직전에 나온 손님)을 빼고 무작위로 고른다
+export function pickGuest(exclude: (string | undefined | null)[] = []): GuestLook {
+  const pool = guests.filter((g) => !exclude.includes(g.id));
+  const list = pool.length > 0 ? pool : guests;
+  return list[Math.floor(Math.random() * list.length)];
 }
