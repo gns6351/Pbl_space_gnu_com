@@ -8,6 +8,8 @@ import { Screen } from '@/components/screen';
 import { playerImage } from '@/data/players';
 import { useProfile } from '@/state/profile';
 import { C } from '@/theme/colors';
+import { CrayonFrame, plain } from '@/components/crayon';
+import { CRAYON } from '@/theme/fonts';
 
 function formatDate(iso: string) {
   const d = new Date(iso);
@@ -20,7 +22,7 @@ export default function SettingsScreen() {
   const [confirm, setConfirm] = useState<'withdraw' | 'clear' | null>(null);
 
   return (
-    <Screen step="설정" action="닫기" onAction={() => router.back()} glowAt="50% -20%">
+    <Screen step="" action="닫기" onAction={() => router.back()} glowAt="50% -20%">
       {/* 내 캐릭터 */}
       <Section title="내 캐릭터">
         <Pressable accessibilityRole="button" onPress={() => router.push('/character')} style={styles.row}>
@@ -52,7 +54,8 @@ export default function SettingsScreen() {
             </View>
             <ConsentNotice />
             {confirm === 'withdraw' ? (
-              <View style={styles.confirm}>
+              <View style={[styles.confirm, CRAYON && plain]}>
+                {CRAYON ? <CrayonFrame fill={C.panel} stroke={C.borderStrong} radius={14} seed={6} grainOpacity={0} /> : null}
                 <Text style={styles.body}>동의를 철회하면 다음 상담을 시작할 때 다시 동의를 물어요. 보관한 카드는 그대로 남아요.</Text>
                 <View style={{ flexDirection: 'row', gap: 8 }}>
                   <View style={{ flex: 1 }}><SecondaryButton label="취소" onPress={() => setConfirm(null)} /></View>
@@ -72,7 +75,8 @@ export default function SettingsScreen() {
       <Section title="카드 보관함">
         <Text style={styles.body}>이 폰에 보관한 카드 {cards.length}장</Text>
         {confirm === 'clear' ? (
-          <View style={styles.confirm}>
+          <View style={[styles.confirm, CRAYON && plain]}>
+            {CRAYON ? <CrayonFrame fill={C.panel} stroke={C.borderStrong} radius={14} seed={8} grainOpacity={0} /> : null}
             <Text style={styles.body}>보관한 카드를 모두 지울까요? 되돌릴 수 없어요.</Text>
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <View style={{ flex: 1 }}><SecondaryButton label="취소" onPress={() => setConfirm(null)} /></View>

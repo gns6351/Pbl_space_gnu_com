@@ -1,3 +1,4 @@
+import { Gaegu_400Regular, Gaegu_700Bold, useFonts } from '@expo-google-fonts/gaegu';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
@@ -6,6 +7,10 @@ import { SessionProvider } from '@/state/session';
 import { C } from '@/theme/colors';
 
 export default function RootLayout() {
+  // 손글씨 글꼴을 다 읽기 전에는 화면을 그리지 않는다 (글꼴이 깜빡 바뀌는 것 방지)
+  const [fontsLoaded] = useFonts({ Gaegu_400Regular, Gaegu_700Bold });
+  if (!fontsLoaded) return null;
+
   return (
     <ProfileProvider>
     <SessionProvider>

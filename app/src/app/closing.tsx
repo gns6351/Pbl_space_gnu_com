@@ -3,13 +3,14 @@ import { useEffect, useRef } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 
 import { PrimaryButton, SecondaryButton } from '@/components/buttons';
-import { Mirror, mirrorPanel } from '@/components/mirror';
+import { Mirror, mirrorFit, mirrorPanel } from '@/components/mirror';
 import { Screen } from '@/components/screen';
 import { guestImage } from '@/data/guests';
 import { playerImage } from '@/data/players';
 import { useProfile } from '@/state/profile';
 import { useSession } from '@/state/session';
 import { C } from '@/theme/colors';
+import { HAND } from '@/theme/fonts';
 
 const LABEL = { 수용: '받아들이기', 수정: '고쳐서 받기', 보류: '나중에 생각하기', 거부: '지금은 아니에요' } as const;
 
@@ -18,6 +19,8 @@ export default function ClosingScreen() {
   const { s, reset } = useSession();
   const { playerId, addCard, removeCard, cards } = useProfile();
   const hasCard = !!s.highlight && !!s.returned;
+  // 문장이 길면 거울을 키워 잘리지 않게 한다 (라벨 두 줄 몫으로 20자 여유)
+  const fit = mirrorFit((s.returned ?? '').length + 20);
   const savedId = useRef<string | null>(null);
 
   // 저장에 동의한 판만 카드 보관함(기기)에 한 번 저장한다
@@ -52,13 +55,12 @@ export default function ClosingScreen() {
       }>
       <View style={{ gap: 6 }}>
         <Text style={styles.title}>오늘의 상담을 마쳤어요</Text>
-        <Text style={styles.body}>[손님 이름]은 고개를 끄덕이며 상담소를 나섰어요.</Text>
       </View>
       <View style={{ alignItems: 'center' }}>
         {hasCard ? (
-          <Mirror width={224} height={280} reflection={playerImage(playerId)} reflectionOpacity={0.32} style={{ paddingHorizontal: 28, gap: 10 }}>
+          <Mirror width={fit.width} height={fit.height} reflection={playerImage(playerId)} reflectionOpacity={fit.reflectionOpacity} style={{ paddingHorizontal: fit.width * 0.11, gap: 10 }}>
             <Text style={styles.mirrorLabel}>오늘 거울이 돌려준 말</Text>
-            <Text style={[styles.mirrorText, mirrorPanel]}>{s.returned}</Text>
+            <Text style={[styles.mirrorText, fit.text, mirrorPanel]}>{s.returned}</Text>
             {s.decision ? <Text style={styles.mirrorLabel}>내 선택 · {LABEL[s.decision]}</Text> : null}
           </Mirror>
         ) : (
@@ -76,9 +78,9 @@ export default function ClosingScreen() {
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 22, fontWeight: '700', color: C.text, textAlign: 'center' },
+  title: { fontSize: 25, fontFamily: HAND, fontWeight: 'normal', color: C.text, textAlign: 'center' },
   body: { fontSize: 14, lineHeight: 22, color: C.muted, textAlign: 'center' },
-  mirrorLabel: { fontSize: 14, fontWeight: '700', color: '#3E5366', textAlign: 'center' },
-  mirrorText: { fontSize: 16, lineHeight: 26, fontWeight: '500', color: C.onGlass, textAlign: 'center' },
+  mirrorLabel: { fontSize: 17, fontFamily: HAND, color: '#3E5366', textAlign: 'center' },
+  mirrorText: { color: C.onGlass, textAlign: 'center' },
   note: { fontSize: 14, color: C.sub, textAlign: 'center' },
 });

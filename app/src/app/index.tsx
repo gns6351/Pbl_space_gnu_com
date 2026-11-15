@@ -8,6 +8,7 @@ import { playerImage } from '@/data/players';
 import { useProfile } from '@/state/profile';
 import { useSession } from '@/state/session';
 import { C } from '@/theme/colors';
+import { HAND } from '@/theme/fonts';
 
 // 홈. 처음 실행이면 캐릭터 고르기로, 동의가 저장돼 있으면 바로 걱정 입력으로 간다.
 export default function HomeScreen() {
@@ -54,6 +55,6 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   change: { minHeight: 44, paddingHorizontal: 12, justifyContent: 'center' },
   changeText: { fontSize: 14, color: C.ice },
-  title: { fontSize: 22, fontWeight: '700', color: C.text, textAlign: 'center' },
+  title: { fontSize: 25, fontFamily: HAND, fontWeight: 'normal', color: C.text, textAlign: 'center' },
   body: { fontSize: 15, lineHeight: 24, color: C.muted, textAlign: 'center' },
 });

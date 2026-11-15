@@ -5,6 +5,8 @@ import { PrimaryButton } from '@/components/buttons';
 import { Screen } from '@/components/screen';
 import { useProfile } from '@/state/profile';
 import { C, glow } from '@/theme/colors';
+import { CRAYON, HAND } from '@/theme/fonts';
+import { CrayonFrame, plain } from '@/components/crayon';
 
 function formatDate(iso: string) {
   const d = new Date(iso);
@@ -24,13 +26,13 @@ export default function ArchiveScreen() {
       footer={<PrimaryButton label="새 상담 시작하기" onPress={() => router.replace('/')} />}>
       <View style={{ gap: 6 }}>
         <Text style={styles.title}>거울이 돌려준 말들</Text>
-        <Text style={styles.body}>저장에 동의한 카드만 이 폰 안에 남아요. 서버에는 저장되지 않아요.</Text>
       </View>
       {cards.length === 0 ? (
         <Text style={[styles.body, { paddingVertical: 40, textAlign: 'center' }]}>아직 보관한 카드가 없어요.</Text>
       ) : (
         cards.map((c, i) => (
-          <View key={c.id} style={[styles.card, i === 0 && styles.cardLatest]}>
+          <View key={c.id} style={[styles.card, i === 0 && styles.cardLatest, CRAYON && plain]}>
+            {CRAYON ? <CrayonFrame fill={i === 0 ? '#E3F0FC' : 'rgba(255,255,255,0.06)'} stroke={i === 0 ? '#3E5366' : C.border} radius={20} seed={i + 1} grainOpacity={i === 0 ? 0.07 : 0.03} /> : null}
             <View style={styles.meta}>
               <Text style={[styles.metaText, i === 0 && { color: '#3E5366' }]}>{formatDate(c.createdAt)}</Text>
               {c.decision ? <Text style={[styles.metaText, i === 0 && { color: '#3E5366' }]}>{c.decision}</Text> : null}
@@ -45,13 +47,15 @@ export default function ArchiveScreen() {
           </View>
         ))
       )}
+      <Text style={styles.note}>저장에 동의한 카드만 이 폰 안에 남아요. 서버에는 저장되지 않아요.</Text>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 22, fontWeight: '700', color: C.text },
+  title: { fontSize: 25, fontFamily: HAND, fontWeight: 'normal', color: C.text },
   body: { fontSize: 14, lineHeight: 22, color: C.muted },
+  note: { fontSize: 14, lineHeight: 21, color: C.sub, textAlign: 'center', paddingTop: 4 },
   card: { padding: 18, borderRadius: 20, borderWidth: 1, borderColor: C.border, backgroundColor: 'rgba(255,255,255,0.06)', gap: 8 },
   cardLatest: { borderWidth: 0, backgroundColor: '#E3F0FC', backgroundImage: 'linear-gradient(160deg, #F6FBFF 0%, #D6E8F8 100%)', boxShadow: glow.soft },
   meta: { flexDirection: 'row', justifyContent: 'space-between' },

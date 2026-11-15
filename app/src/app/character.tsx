@@ -8,6 +8,8 @@ import { Screen } from '@/components/screen';
 import { players } from '@/data/players';
 import { useProfile } from '@/state/profile';
 import { C, glow } from '@/theme/colors';
+import { CRAYON, HAND } from '@/theme/fonts';
+import { CrayonFrame, plain } from '@/components/crayon';
 
 // 00 내 캐릭터 고르기 (FR-13). 처음 실행 때 나오고, 첫 화면에서 다시 바꿀 수 있다.
 export default function CharacterScreen() {
@@ -46,7 +48,8 @@ export default function CharacterScreen() {
               accessibilityLabel={`캐릭터 ${i + 1}`}
               accessibilityState={{ selected: on }}
               onPress={() => setPicked(p.id)}
-              style={[styles.cell, on && styles.cellOn]}>
+              style={[styles.cell, on && styles.cellOn, CRAYON && plain, CRAYON && on && { boxShadow: glow.soft }]}>
+              {CRAYON ? <CrayonFrame fill={on ? 'rgba(234,244,255,0.14)' : 'rgba(255,255,255,0.06)'} stroke={on ? '#CFE3F5' : C.border} radius={48} seed={i + 1} grainOpacity={0} /> : null}
               <Image source={p.image} style={{ width: '100%', height: '90%' }} resizeMode="contain" />
             </Pressable>
           );
@@ -57,7 +60,7 @@ export default function CharacterScreen() {
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 22, fontWeight: '700', color: C.text, textAlign: 'center' },
+  title: { fontSize: 25, fontFamily: HAND, fontWeight: 'normal', color: C.text, textAlign: 'center' },
   body: { fontSize: 14, lineHeight: 22, color: C.muted, textAlign: 'center' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10 },
   cell: {

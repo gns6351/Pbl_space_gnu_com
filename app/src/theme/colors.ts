@@ -13,6 +13,7 @@ export const C = {
   glass: '#EAF4FF', // 주요 버튼 배경
   onGlass: '#13202B', // 거울·버튼 위 글자
   danger: '#F2A99C',
+  warm: '#F6C46A', // 따뜻한 강조 (주의 안내 등에 아껴서)
 } as const;
 
 // 거울 빛 (boxShadow 문자열)

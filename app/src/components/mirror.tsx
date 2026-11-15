@@ -1,7 +1,8 @@
 import { ReactNode } from 'react';
-import { Image, ImageSourcePropType, StyleSheet, View, ViewStyle } from 'react-native';
+import { Image, ImageSourcePropType, StyleSheet, TextStyle, View, ViewStyle } from 'react-native';
 
 import { glow } from '@/theme/colors';
+import { HAND } from '@/theme/fonts';
 
 type Props = {
   width: number;
@@ -43,8 +44,16 @@ export const mirrorPanel: ViewStyle = {
   paddingVertical: 10,
   paddingHorizontal: 12,
   borderRadius: 14,
-  backgroundColor: 'rgba(246,251,255,0.82)',
+  backgroundColor: 'rgba(246,251,255,0.9)',
 };
+
+// 거울 속 문장 길이에 맞춰 거울 크기·비침 세기·글자를 정한다.
+// 길수록 거울을 키우고 내 모습은 흐리게, 아주 길면 읽기 쉬운 기본 글꼴로 바꾼다.
+export function mirrorFit(length: number): { width: number; height: number; reflectionOpacity: number; text: TextStyle } {
+  if (length <= 40) return { width: 248, height: 300, reflectionOpacity: 0.32, text: { fontFamily: HAND, fontSize: 19, lineHeight: 28 } };
+  if (length <= 90) return { width: 290, height: 360, reflectionOpacity: 0.24, text: { fontFamily: HAND, fontSize: 17, lineHeight: 25 } };
+  return { width: 310, height: 420, reflectionOpacity: 0.18, text: { fontSize: 15, lineHeight: 23, fontWeight: '500' } };
+}
 
 const styles = StyleSheet.create({
   mirror: {
