@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect } from 'react';
+import { BackHandler, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { SecondaryButton } from '@/components/buttons';
 import { Screen } from '@/components/screen';
@@ -13,8 +14,19 @@ export default function SafetyScreen() {
   const { reset } = useSession();
   const home = () => {
     reset();
+    // 쌓인 화면(손님 맞이 등)을 모두 닫고 처음 화면으로
+    if (router.canDismiss()) router.dismissAll();
     router.replace('/');
   };
+
+  // 안드로이드 뒤로 가기로 상담에 돌아가지 못하게, 뒤로 가기는 처음 화면으로 보낸다
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      home();
+      return true;
+    });
+    return () => sub.remove();
+  });
 
   return (
     <Screen step="안내" action="닫기" onAction={home} glowAt="50% -20%" footer={<SecondaryButton label="처음 화면으로" onPress={home} />}>

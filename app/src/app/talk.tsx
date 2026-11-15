@@ -14,6 +14,10 @@ import { CrayonFrame, crayonLine, plain } from '@/components/crayon';
 
 type Msg = { from: 'guest' | 'me'; text: string; highlight?: boolean };
 
+// 서버가 생기기 전, 위험 발화 안내 흐름을 시험하는 정해진 말 (FR-10).
+// TODO(서버 연동): 서버의 위험 발화 판정 결과로 바꾸고 이 테스트 말은 지운다.
+const SAFETY_TEST = '/위험테스트';
+
 // 서버 연동 전 임시 대본. askAdvice 턴은 선택지 없이 직접 써야 한다 (FR-05). 실제 대화는 AI가 만들고 더 길어진다.
 const SCRIPT: { guest: string; choices: string[]; askAdvice?: boolean }[] = [
   { guest: '사실 팀원 한 명이 일주일째 답장이 없어요.', choices: ['많이 답답했겠다.', '언제부터 그랬어?', '다른 팀원들은 뭐래?'] },
@@ -41,6 +45,11 @@ export default function TalkScreen() {
 
   const send = (text: string, picked: boolean) => {
     if (!text.trim()) return;
+    // 위험 발화면 대화를 멈추고 안내 화면으로. 이 판의 역할극은 다시 이어지지 않는다.
+    if (text.trim() === SAFETY_TEST) {
+      router.replace('/safety');
+      return;
+    }
     // TODO(서버 연동): 직접 입력일 때만 조언 판정 API 결과로 highlight를 정한다 (FR-06). 지금은 10자 이상이면 조언으로 가정.
     const highlight = !picked && text.trim().length >= 10;
     // 거울 앞에서 고를 수 있게 모아 둔다. 바로 앞의 손님 말도 함께 남긴다.
