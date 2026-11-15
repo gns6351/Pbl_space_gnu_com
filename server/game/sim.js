@@ -102,6 +102,8 @@ export async function runSimulation({ base, llm, settings, contentDir, games = 3
         mirrorShown: v.mirror?.shown || null, verdict: v.decision?.verdict || null, aiCalls: v.ai?.calls ?? null,
         guest: v.guest ? { name: v.guest.name, situation: v.guest.situation, source: v.guest.source, core_conflict: raw?.guest?.card?.core_conflict ?? null } : null,
         facts: raw?.facts || [], transcript: v.transcript || [], playerCalls: playerCalls.length,
+        // 테스트 도구(플레이어·맥락 판정) AI 호출 실패: 실패하면 기본 동작으로 대신 진행하므로, 이 수가 0이 아니면 결과를 믿을 수 없다
+        toolErrors: playerCalls.filter((c) => !c.valid).map((c) => `${c.kind}:${c.error}`),
       });
     } catch (err) {
       g.errors.push(`exception:${err.message}`);
@@ -133,6 +135,7 @@ export function summarizeSim(games) {
     turnLatencyP95: p95(turnMs), mirrorLatencyP95: p95(mirrorMs), targets: { turnP95: 10000, mirrorP95: 20000 }, // NFR-01
     callsMax: calls.length ? Math.max(...calls) : null, callsAvg: calls.length ? +(calls.reduce((a, b) => a + b, 0) / calls.length).toFixed(1) : null, callsTarget: 60, // NFR-08
     mirrorOriginalOnly: games.filter((g) => g.mirrorShown === 'original_only').length,
+    toolErrors: { games: games.filter((g) => g.toolErrors?.length).length, calls: games.reduce((n, g) => n + (g.toolErrors?.length || 0), 0), samples: [...new Set(games.flatMap((g) => g.toolErrors || []))].slice(0, 5) },
     guestFallback: games.filter((g) => g.guest?.source === 'example').length,
     errors: games.filter((g) => g.errors.length).map((g) => ({ n: g.n, persona: g.persona, errors: g.errors })),
   };
