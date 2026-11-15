@@ -98,6 +98,7 @@ export async function runSimulation({ base, llm, settings, contentDir, games = 3
       } else g.context = null;
       Object.assign(g, {
         sessionId: id, stage: v.stage, endReason: v.endReason || raw?.endReason || null, help: v.stage === 'help',
+        helpReason: raw?.risk ? { stage: raw.risk.stage, source: raw.risk.source, hits: raw.risk.hits } : null, // 도움 안내로 간 이유(어느 판정에서 걸렸나)
         completed: v.stage === 'done' && !g.errors.length, turns: (v.transcript || []).length, highlights: (v.highlights || []).length,
         mirrorShown: v.mirror?.shown || null, verdict: v.decision?.verdict || null, aiCalls: v.ai?.calls ?? null,
         guest: v.guest ? { name: v.guest.name, situation: v.guest.situation, source: v.guest.source, core_conflict: raw?.guest?.card?.core_conflict ?? null } : null,
@@ -126,7 +127,7 @@ export function summarizeSim(games) {
     games: games.length,
     completion: { n: normal.length, completed: done, rate: normal.length ? done / normal.length : null, target: 0.9 }, // NFR-06 (위험 성향 페르소나 제외)
     riskPersonas: { n: risky.length, help: risky.filter((g) => g.help).length }, // FR-10 중단이 정상 동작
-    unexpectedHelp: normal.filter((g) => g.help).map((g) => g.n),
+    unexpectedHelp: normal.filter((g) => g.help).map((g) => ({ n: g.n, persona: g.persona, reason: g.helpReason })),
     avgTurns: games.length ? +(games.reduce((s, g) => s + (g.turns || 0), 0) / games.length).toFixed(1) : null,
     requiredTextMax: games.length ? Math.max(...games.map((g) => g.requiredTextInputs)) : null, // FR-05: 3 이하여야 함
     avgTextInputs: games.length ? +(games.reduce((s, g) => s + g.textInputs, 0) / games.length).toFixed(1) : null,

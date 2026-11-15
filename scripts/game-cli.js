@@ -43,13 +43,13 @@ if (cmd === 'sim') {
   const dir = path.join(outDir, `sim-${stamp}`);
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'report.json'), JSON.stringify(rep, null, 2));
-  fs.writeFileSync(path.join(dir, 'games.csv'), toCsv(rep.games.map((g) => ({ n: g.n, persona: g.persona, risk_persona: g.risk, topic: g.topic, stage: g.stage, completed: g.completed, help: g.help, end_reason: g.endReason, turns: g.turns, text_inputs: g.textInputs, required_text_inputs: g.requiredTextInputs, highlights: g.highlights, mirror: g.mirrorShown, verdict: g.verdict, context_kept: g.context ?? '', context_note: g.contextNote || '', ai_calls: g.aiCalls, turn_ms_max: g.turnMs.length ? Math.max(...g.turnMs) : '', mirror_ms: g.mirrorMs ?? '', retries: g.retries, errors: g.errors.join(';'), tool_errors: (g.toolErrors || []).join(';') }))));
+  fs.writeFileSync(path.join(dir, 'games.csv'), toCsv(rep.games.map((g) => ({ n: g.n, persona: g.persona, risk_persona: g.risk, topic: g.topic, stage: g.stage, completed: g.completed, help: g.help, help_source: g.helpReason?.source || '', end_reason: g.endReason, turns: g.turns, text_inputs: g.textInputs, required_text_inputs: g.requiredTextInputs, highlights: g.highlights, mirror: g.mirrorShown, verdict: g.verdict, context_kept: g.context ?? '', context_note: g.contextNote || '', ai_calls: g.aiCalls, turn_ms_max: g.turnMs.length ? Math.max(...g.turnMs) : '', mirror_ms: g.mirrorMs ?? '', retries: g.retries, errors: g.errors.join(';'), tool_errors: (g.toolErrors || []).join(';') }))));
   // FR-03 제작자 2인 판정용: 걱정(페르소나가 쓴 가상 걱정)과 손님 카드의 핵심 갈등 — 유지 / 부분 유지 / 불일치
   fs.writeFileSync(path.join(dir, 'guests.csv'), toCsv(rep.games.filter((g) => g.guest).map((g) => ({ n: g.n, persona: g.persona, worry: g.worry, guest: g.guest.name, situation: g.guest.situation, core_conflict: g.guest.core_conflict ?? '', source: g.guest.source, rater1: '', rater2: '', consensus: '' }))));
   const s = rep.summary;
   if (s.toolErrors.calls) console.log(`\n※ 테스트용 플레이어·맥락 판정 AI 호출이 ${s.toolErrors.calls}번 실패했어요(${s.toolErrors.games}판). 실패한 곳은 기본 동작으로 대신 진행했으니 이 결과는 믿을 수 없어요. 원인: ${s.toolErrors.samples.join(', ')} — SIM_MODEL을 확인하세요.`);
   console.log(`\n완주율(위험 성향 제외, 목표 90%): ${pct(s.completion.completed, s.completion.n)}`);
-  console.log(`위험 성향 페르소나 도움 안내: ${pct(s.riskPersonas.help, s.riskPersonas.n)} · 예상 밖 도움 안내: ${s.unexpectedHelp.length}판`);
+  console.log(`위험 성향 페르소나 도움 안내: ${pct(s.riskPersonas.help, s.riskPersonas.n)} · 예상 밖 도움 안내: ${s.unexpectedHelp.length}판${s.unexpectedHelp.length ? ` (${s.unexpectedHelp.map((u) => `${u.n}판 ${u.persona}: ${u.reason?.source || '?'}`).join(', ')})` : ''}`);
   console.log(`평균 턴 ${s.avgTurns} · 평균 서술형 입력 ${s.avgTextInputs} (조언 요청 턴 입력은 판당 최대 ${s.requiredTextMax}회, 기준 3회 이하) · 하이라이트 있는 판 ${s.highlightRate == null ? '—' : `${(s.highlightRate * 100).toFixed(0)}%`}`);
   console.log(`맥락 유지(손님이 앞의 말·정정과 어긋나지 않음): ${pct(s.context.kept, s.context.judged)}${s.context.broken.length ? ` · 어긋난 판 ${s.context.broken.map((b) => b.n).join(', ')}` : ''}`);
   console.log(`응답 시간 p95: 일반 턴 ${ms(s.turnLatencyP95)} (목표 10초) · 거울 장면 ${ms(s.mirrorLatencyP95)} (목표 20초)`);

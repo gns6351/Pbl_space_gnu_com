@@ -64,8 +64,9 @@ export function judgeMirror(raw) {
 export function judgePlayer(raw) {
   const p = parse(raw);
   if (!p || !['choice', 'text', 'end'].includes(p.action)) return { valid: false, error: 'SCHEMA' };
-  if (p.action === 'text' && !str(p.text, 300)) return { valid: false, error: 'TEXT' };
-  return { valid: true, action: p.action, choice: Number.isInteger(p.choice) ? p.choice : 0, text: typeof p.text === 'string' ? p.text.trim() : '' };
+  // 앱 입력창처럼 300자에서 자른다(장문 성향 플레이어가 넘겨 써도 실패로 보지 않음)
+  if (p.action === 'text' && !str(p.text, 5000)) return { valid: false, error: 'TEXT' };
+  return { valid: true, action: p.action, choice: Number.isInteger(p.choice) ? p.choice : 0, text: typeof p.text === 'string' ? [...p.text.trim()].slice(0, 300).join('') : '' };
 }
 
 // 테스트 도구: 맥락 유지 판정
