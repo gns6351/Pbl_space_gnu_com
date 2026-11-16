@@ -26,6 +26,7 @@ export default function RootLayout() {
         <Stack.Screen name="guest" />
         <Stack.Screen name="talk" />
         <Stack.Screen name="mirror-pick" />
+        <Stack.Screen name="mirror-reflect" options={{ gestureEnabled: false }} />
         <Stack.Screen name="mirror-compare" />
         <Stack.Screen name="closing" />
         <Stack.Screen name="safety" options={{ gestureEnabled: false }} />

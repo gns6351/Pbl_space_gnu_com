@@ -1,5 +1,7 @@
 import { createContext, ReactNode, useContext, useMemo, useState } from 'react';
 
+import type { GuestInfo, Turn } from '@/api';
+
 // 직접 쓴 조언 하나. before는 그 말을 하게 된 바로 앞의 손님 말 (거울 앞에서 상황을 떠올리게 한다)
 export type Highlight = { id: number; text: string; before: string };
 
@@ -7,7 +9,10 @@ export type Highlight = { id: number; text: string; before: string };
 type Session = {
   saveConsent: boolean;
   worry: string;
-  guestId: string | null;
+  guestId: string | null; // 손님 일러스트
+  sessionId: string | null; // 서버의 이번 판 번호
+  guest: GuestInfo | null; // 손님 생성 API가 만든 손님
+  firstTurn: Turn | null; // 손님의 첫 대사
   regenLeft: number;
   highlights: Highlight[]; // 기록장에 담긴 직접 쓴 조언들 (한 판에 여러 개)
   highlight: string | null; // 그중 거울 앞에서 고른 하나
@@ -19,6 +24,9 @@ const initial: Session = {
   saveConsent: false,
   worry: '',
   guestId: null,
+  sessionId: null,
+  guest: null,
+  firstTurn: null,
   regenLeft: 1,
   highlights: [],
   highlight: null,

@@ -1,11 +1,14 @@
-import { router } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 
 import { ComponentRef, useRef, useState } from 'react';
 import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { api, errorMessage, Turn } from '@/api';
 import { Bubble } from '@/components/bubble';
 import { PrimaryButton } from '@/components/buttons';
+import { RetryCard } from '@/components/retry';
+import { TypingBubble } from '@/components/waiting';
 import { guestImage } from '@/data/guests';
 import { useSession } from '@/state/session';
 import { C } from '@/theme/colors';
@@ -14,54 +17,64 @@ import { CrayonFrame, crayonLine, plain } from '@/components/crayon';
 
 type Msg = { from: 'guest' | 'me'; text: string; highlight?: boolean };
 
-// 서버가 생기기 전, 위험 발화 안내 흐름을 시험하는 정해진 말 (FR-10).
-// TODO(서버 연동): 서버의 위험 발화 판정 결과로 바꾸고 이 테스트 말은 지운다.
-const SAFETY_TEST = '/위험테스트';
-
-// 서버 연동 전 임시 대본. askAdvice 턴은 선택지 없이 직접 써야 한다 (FR-05). 실제 대화는 AI가 만들고 더 길어진다.
-const SCRIPT: { guest: string; choices: string[]; askAdvice?: boolean }[] = [
-  { guest: '사실 팀원 한 명이 일주일째 답장이 없어요.', choices: ['많이 답답했겠다.', '언제부터 그랬어?', '다른 팀원들은 뭐래?'] },
-  { guest: '단톡방에 공지를 올려도 읽기만 하고 아무 말이 없어요.', choices: ['읽기만 하면 더 신경 쓰이지.', '다른 연락 방법은 있어?'] },
-  { guest: '그냥 제가 다 해 버릴까 싶다가도 억울해요.', choices: ['억울할 만해.', '혼자 다 하면 힘들잖아.'] },
-  { guest: '그 사람이 또 안 읽으면요? 저라면 어떻게 하는 게 좋을까요?', choices: [], askAdvice: true },
-  { guest: '따로 연락하는 건 좀 무서워요. 괜히 싸우게 될까 봐요.', choices: ['그 마음 이해돼.', '무서운 게 당연해.'] },
-  { guest: '혹시 말을 꺼낸다면, 어떻게 시작하면 좋을까요?', choices: [], askAdvice: true },
-  { guest: '그렇게 해 볼 수 있을 것 같아요. 오늘 이야기 들어 줘서 고마워요.', choices: [] },
-];
-
-// 04 상담 (FR-04~07)
+// 04 상담 (FR-04~07). 손님 대사와 선택지는 상담 턴 API가 만든다.
 export default function TalkScreen() {
   const { s, set } = useSession();
-  const [turn, setTurn] = useState(0);
-  const [msgs, setMsgs] = useState<Msg[]>([{ from: 'guest', text: SCRIPT[0].guest }]);
+  const [cur, setCur] = useState<Turn | null>(s.firstTurn);
+  const [turnNo, setTurnNo] = useState(1);
+  const [msgs, setMsgs] = useState<Msg[]>(s.firstTurn?.line ? [{ from: 'guest', text: s.firstTurn.line }] : []);
   const [draft, setDraft] = useState('');
   const [freeMode, setFreeMode] = useState(false);
+  const [waiting, setWaiting] = useState(false); // 손님이 대답하는 중: 입력 잠금 (NFR-07)
+  const [failed, setFailed] = useState<{ text: string; picked: boolean; message: string } | null>(null);
   const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
 
-  const cur = SCRIPT[Math.min(turn, SCRIPT.length - 1)];
-  const askAdvice = !!cur.askAdvice;
+  if (!s.sessionId || !cur) return <Redirect href="/" />;
+
+  const askAdvice = cur.askAdvice;
   const showInput = askAdvice || freeMode;
-  const done = turn >= SCRIPT.length - 1;
+  const done = cur.done;
+  const lastGuestLine = [...msgs].reverse().find((m) => m.from === 'guest')?.text ?? '';
+  const scrollDown = () => setTimeout(() => scroll.current?.scrollToEnd({ animated: true }), 50);
+
+  // 서버에 보낸다. retry=true면 이미 화면에 올린 내 말을 다시 보내는 것
+  const request = async (text: string, picked: boolean, retry = false) => {
+    if (waiting) return;
+    if (!retry) {
+      setMsgs((m) => [...m, { from: 'me', text }]);
+      setDraft('');
+      setFreeMode(false);
+    }
+    setFailed(null);
+    setWaiting(true);
+    scrollDown();
+    const before = lastGuestLine;
+    try {
+      const r = await api.sendTurn(s.sessionId!, { text, picked });
+      // 위험 발화면 대화를 멈추고 안내 화면으로. 이 판의 역할극은 다시 이어지지 않는다 (FR-10)
+      if (r.risk) {
+        router.replace('/safety');
+        return;
+      }
+      if (r.highlight) {
+        // 거울 앞에서 고를 수 있게 모아 둔다. 바로 앞의 손님 말도 함께 남긴다 (FR-06)
+        set({ highlights: [...s.highlights, { id: Date.now(), text, before }] });
+        setMsgs((m) => m.map((x, i) => (i === m.length - 1 ? { ...x, highlight: true } : x)));
+      }
+      if (r.next.line) setMsgs((m) => [...m, { from: 'guest', text: r.next.line! }]);
+      setCur(r.next);
+      setTurnNo((n) => n + 1);
+    } catch (e) {
+      setFailed({ text, picked, message: errorMessage(e) });
+    } finally {
+      setWaiting(false);
+      scrollDown();
+    }
+  };
 
   const send = (text: string, picked: boolean) => {
     if (!text.trim()) return;
-    // 위험 발화면 대화를 멈추고 안내 화면으로. 이 판의 역할극은 다시 이어지지 않는다.
-    if (text.trim() === SAFETY_TEST) {
-      router.replace('/safety');
-      return;
-    }
-    // TODO(서버 연동): 직접 입력일 때만 조언 판정 API 결과로 highlight를 정한다 (FR-06). 지금은 10자 이상이면 조언으로 가정.
-    const highlight = !picked && text.trim().length >= 10;
-    // 거울 앞에서 고를 수 있게 모아 둔다. 바로 앞의 손님 말도 함께 남긴다.
-    if (highlight) set({ highlights: [...s.highlights, { id: Date.now(), text: text.trim(), before: cur.guest }] });
-    const nextTurn = turn + 1;
-    const nextMsgs: Msg[] = [...msgs, { from: 'me', text: text.trim(), highlight }];
-    if (nextTurn < SCRIPT.length) nextMsgs.push({ from: 'guest', text: SCRIPT[nextTurn].guest });
-    setMsgs(nextMsgs);
-    setTurn(nextTurn);
-    setDraft('');
-    setFreeMode(false);
-    setTimeout(() => scroll.current?.scrollToEnd({ animated: true }), 50);
+    request(text.trim(), picked);
   };
 
   const finish = () => router.push('/farewell');
@@ -75,8 +88,8 @@ export default function TalkScreen() {
           </View>
         ) : null}
         <View style={{ flex: 1 }}>
-          <Text style={styles.name}>[손님 이름]</Text>
-          <Text style={styles.meta}>상담 중 · {turn + 1}번째 대화</Text>
+          <Text style={styles.name}>{s.guest?.name ?? '손님'}</Text>
+          <Text style={styles.meta}>{waiting ? '대답하는 중…' : `상담 중 · ${turnNo}번째 대화`}</Text>
         </View>
         <Pressable accessibilityRole="button" onPress={finish} style={[styles.pill, CRAYON && plain]}>
           {CRAYON ? <CrayonFrame fill="rgba(255,255,255,0.04)" stroke={crayonLine} strokeWidth={1.8} radius={22} seed={3} grainOpacity={0.1} grainTone="light" /> : null}
@@ -100,14 +113,24 @@ export default function TalkScreen() {
               </View>
             ),
           )}
+          {waiting ? <TypingBubble /> : null}
         </ScrollView>
 
-        {done ? (
+        {failed ? (
+          <View style={styles.composer}>
+            <RetryCard
+              title="손님이 잠깐 말을 잇지 못했어요"
+              message={failed.message}
+              retryLabel="다시 보내기"
+              onRetry={() => request(failed.text, failed.picked, true)}
+            />
+          </View>
+        ) : done ? (
           <View style={styles.composer}>
             <PrimaryButton label="마무리하기" onPress={finish} />
           </View>
         ) : (
-          <View style={styles.composer}>
+          <View style={[styles.composer, waiting && { opacity: 0.45 }]} pointerEvents={waiting ? 'none' : 'auto'}>
             {showInput ? (
               <>
                 <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-end' }}>
@@ -121,6 +144,7 @@ export default function TalkScreen() {
                     placeholderTextColor={C.sub}
                     multiline
                     maxLength={300}
+                    editable={!waiting}
                     style={styles.input}
                     textAlignVertical="center"
                     accessibilityLabel="답장 입력"
@@ -131,6 +155,12 @@ export default function TalkScreen() {
                     <Text style={{ color: C.onGlass, fontSize: 18, fontWeight: '700' }}>→</Text>
                   </Pressable>
                 </View>
+                {/* 조언 요청 턴이 아니면, 직접 쓰다가도 선택지로 돌아갈 수 있다 */}
+                {!askAdvice ? (
+                  <Pressable accessibilityRole="button" onPress={() => { setFreeMode(false); setDraft(''); }} style={styles.textBtn}>
+                    <Text style={{ color: C.ice, fontSize: 14 }}>선택지에서 고르기</Text>
+                  </Pressable>
+                ) : null}
               </>
             ) : (
               <View style={{ gap: 8 }}>

@@ -49,8 +49,13 @@ export default function CharacterScreen() {
               accessibilityState={{ selected: on }}
               onPress={() => setPicked(p.id)}
               style={[styles.cell, on && styles.cellOn, CRAYON && plain, CRAYON && on && { boxShadow: glow.soft }]}>
-              {CRAYON ? <CrayonFrame fill={on ? 'rgba(234,244,255,0.14)' : 'rgba(255,255,255,0.06)'} stroke={on ? '#CFE3F5' : C.border} radius={48} seed={i + 1} grainOpacity={0} /> : null}
-              <Image source={p.image} style={{ width: '100%', height: '90%' }} resizeMode="contain" />
+              {/* 바탕 칠은 캐릭터 뒤에, 손그림 테두리는 캐릭터 앞에 그린다 */}
+              {CRAYON ? <CrayonFrame fill={on ? 'rgba(234,244,255,0.14)' : 'rgba(255,255,255,0.06)'} radius={48} seed={i + 1} grainOpacity={0} /> : null}
+              {/* 캐릭터는 손그림 선과 같은 위치(안쪽 CLIP_INSET px)에서 둥글게 잘라, 선 밖으로 비치지 않게 한다 */}
+              <View style={styles.clip}>
+                <Image source={p.image} style={{ width: '100%', height: '90%' }} resizeMode="contain" />
+              </View>
+              {CRAYON ? <CrayonFrame stroke={on ? '#CFE3F5' : C.border} strokeWidth={on ? 2 : 1.6} radius={48} seed={i + 1} grainOpacity={0} /> : null}
             </Pressable>
           );
         })}
@@ -59,7 +64,21 @@ export default function CharacterScreen() {
   );
 }
 
+// 손그림 선이 칸 가장자리에서 들어와 있는 정도 (선 굵기 + 여유). 삐져나오면 늘리고, 빈틈이 보이면 줄인다
+const CLIP_INSET = 3;
+
 const styles = StyleSheet.create({
+  clip: {
+    position: 'absolute',
+    top: CLIP_INSET,
+    left: CLIP_INSET,
+    right: CLIP_INSET,
+    bottom: CLIP_INSET,
+    borderRadius: 48 - CLIP_INSET,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
   title: { fontSize: 25, fontFamily: HAND, fontWeight: 'normal', color: C.text, textAlign: 'center' },
   body: { fontSize: 14, lineHeight: 22, color: C.muted, textAlign: 'center' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10 },
