@@ -1,4 +1,4 @@
-# 거울상담소 게임 서버 (중간보고서 FR-01~12 · NFR-01~08)
+# 거울상담소 서버
 
 내 걱정을 닮은 AI 손님을 상담하고, 손님에게 건넨 조언을 나에게 돌려받는 모바일 자기성찰 게임의 서버와 AI 부분입니다. Android 앱(React Native·Expo)은 이 서버의 게임 API(`/api/game`)만 부릅니다. API 문서는 [docs/game-api.md](docs/game-api.md), 요구사항별 구현·검증 상태는 [docs/game-requirements.md](docs/game-requirements.md)에 있습니다.
 
