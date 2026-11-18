@@ -1,0 +1,23 @@
+{
+  "name": "mirror-counsel-ai-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "거울상담소 AI 서버: 손님 생성·손님 대사·조언 판정·자기 지향 변환·점검·위험 감지 (Gemini)",
+  "type": "module",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=20.12"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test \"tests/*.test.js\"",
+    "sim": "node scripts/game-cli.js sim",
+    "risk": "node scripts/game-cli.js risk",
+    "report": "node scripts/game-cli.js report"
+  },
+  "dependencies": {
+    "@google/genai": "^2.28.0",
+    "express": "^5.2.1"
+  }
+}

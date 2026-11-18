@@ -4,8 +4,5 @@ node_modules/
 !.env.example
 data/
 data-*/
-results/
-test-results/
-playwright-report/
 .tmp/
-demo-data/
+.DS_Store
