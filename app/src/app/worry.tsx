@@ -31,7 +31,8 @@ export default function WorryScreen() {
   const worry = mode === 'example' ? picked ?? '' : trimmed;
 
   const next = () => {
-    set({ worry });
+    // 걱정을 바꿔 다시 오면 손님도 새로 맞이한다
+    set({ worry, guest: null, guestId: null, sessionId: null, firstTurn: null, regenLeft: 1, highlights: [] });
     router.push('/guest');
   };
 

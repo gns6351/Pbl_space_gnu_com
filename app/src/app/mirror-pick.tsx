@@ -22,9 +22,9 @@ export default function MirrorPickScreen() {
 
   const go = () => {
     if (!picked) return;
-    // TODO(서버 연동): 반환 API로 변환·점검을 거친 문장을 받는다. 점검 실패 시 null (원문만 표시).
-    set({ highlight: picked.text, returned: `${picked.text} 나한테도.` });
-    router.push('/mirror-compare');
+    // 고른 말을 들고 거울이 비추는 화면으로. 반환 API는 그 화면에서 기다린다
+    set({ highlight: picked.text, returned: null });
+    router.push('/mirror-reflect');
   };
 
   return (
