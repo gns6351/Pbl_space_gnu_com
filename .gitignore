@@ -13,3 +13,6 @@ app/web-build/
 # 서버
 server/sessions/
 server/logs/
+
+# 그림 원본 보관 (커밋하지 않음)
+_backup/
