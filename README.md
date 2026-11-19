@@ -11,7 +11,7 @@
 | 폴더 | 내용 | 상태 |
 |---|---|---|
 | [`ai-server/`](ai-server/) | AI 서버: 손님 생성·손님 대사·조언 판정·자기 지향 변환·점검·위험 감지 (Node.js + Gemini) | 요구사항의 AI 부분 구현 완료, 실제 Gemini로 검증 |
-| `app/` | Android 앱 (React Native·Expo) | 예정 |
+| [`app/`](app/) | Android 앱 (React Native·Expo): 접수·손님 맞이·상담·거울·마무리 화면, 캐릭터·카드 보관함·설정 | 화면 구현 완료, 임시 API로 한 판 진행 가능. 서버 연동 예정 |
 
 ## 빠르게 시작하기 (AI 서버)
 
@@ -22,6 +22,16 @@ npm start          # http://localhost:3000/api/game
 ```
 
 API 키가 없어도 모의(mock) 모드로 앱의 모든 화면 흐름을 시험할 수 있습니다. 실제 AI를 쓰려면 `ai-server/.env.example`을 `.env`로 복사해 `GEMINI_API_KEY`를 넣으세요.
+
+## 빠르게 시작하기 (앱)
+
+```bash
+cd app
+npm install
+npx expo start -c   # a: 안드로이드 에뮬레이터, w: 웹
+```
+
+지금은 앱 안의 임시 API(`app/src/api/mock.ts`)로 움직입니다. AI 서버와 연결하려면 `app/src/api/config.ts`의 `useMock`을 `false`로 바꾸고 `app/.env`에 `EXPO_PUBLIC_API_URL=서버 주소`를 넣습니다.
 
 ## 문서
 

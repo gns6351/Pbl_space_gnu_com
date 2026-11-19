@@ -1,8 +1,20 @@
+# 공통
 node_modules/
 .env
 .env.*
 !.env.example
+.DS_Store
+npm-debug.*
+
+# 앱 (Expo)
+app/.expo/
+app/dist/
+app/web-build/
+
+# AI 서버: 플레이어 대화 기록·임시 파일
 data/
 data-*/
 .tmp/
-.DS_Store
+
+# 그림 원본 보관 (커밋하지 않음)
+_backup/
