@@ -62,8 +62,8 @@ export default function MirrorCompareScreen() {
       }>
 
       <View style={{ gap: 8 }}>
-        <Ctx label="처음 적은 걱정" text={s.worry || '[걱정]'} />
-        <Ctx label="손님에게 한 말" text={s.highlight ?? '[하이라이트 원문]'} />
+        <Ctx label="처음 적은 걱정" text={s.worry} />
+        <Ctx label="손님에게 한 말" text={s.highlight ?? ''} />
       </View>
       <View style={{ alignItems: 'center', gap: 8 }}>
         <Mirror width={fit.width} height={fit.height} reflection={playerImage(playerId)} reflectionOpacity={fit.reflectionOpacity} style={{ paddingHorizontal: fit.width * 0.11, gap: 8 }}>
