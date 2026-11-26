@@ -1,97 +1,100 @@
-import { router } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Redirect, router } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { api, errorMessage } from '@/api';
+import { errorMessage, game } from '@/api/game';
 import { PrimaryButton } from '@/components/buttons';
 import { GuestCard } from '@/components/guest-card';
 import { Mirror } from '@/components/mirror';
-import { RetryCard } from '@/components/retry';
 import { Screen } from '@/components/screen';
 import { Waiting } from '@/components/waiting';
-import { guestImage, guests, pickGuest } from '@/data/guests';
+import { guestImage, pickGuest } from '@/data/guests';
 import { guestIdOfPlayer } from '@/data/players';
 import { useProfile } from '@/state/profile';
 import { useSession } from '@/state/session';
 import { C } from '@/theme/colors';
 
-type Status = 'loading' | 'ready' | 'error';
-
-// 03 손님 맞이 (FR-03). 일러스트는 앱에서 고르고, 이름·배경·고민은 손님 생성 API가 만든다.
+// 03 손님 맞이 (FR-03). 손님 정보는 서버가 만들고, 그림은 앱이 고른다.
 export default function GuestScreen() {
-  const { s, set, reset } = useSession();
+  const { s, set } = useSession();
   const { playerId } = useProfile();
   const mine = guestIdOfPlayer(playerId); // 내 캐릭터와 같은 손님은 나오지 않게
-  const [status, setStatus] = useState<Status>(s.guest ? 'ready' : 'loading');
+  const [busy, setBusy] = useState<'reroll' | 'start' | null>(null);
   const [error, setError] = useState('');
-  const started = useRef(false);
 
-  // 손님 한 명을 맞이한다. exclude: 이번에 나오면 안 되는 일러스트
-  const invite = useCallback(
-    async (exclude: (string | null)[]) => {
-      setStatus('loading');
-      const look = pickGuest([mine, ...exclude]);
-      try {
-        const r = await api.createGuest(s.worry, { ageRange: look.ageRange });
-        set({ guestId: look.id, sessionId: r.sessionId, guest: r.guest, firstTurn: r.first });
-        setStatus('ready');
-      } catch (e) {
-        setError(errorMessage(e));
-        setStatus('error');
-      }
-    },
-    [mine, s.worry, set],
-  );
-
+  // 손님 그림을 아직 안 골랐으면 하나 고른다
   useEffect(() => {
-    if (started.current || s.guest) return;
-    started.current = true;
-    invite([]);
-  }, [invite, s.guest]);
+    if (!s.guestId) set({ guestId: pickGuest([mine]).id});
+  }, [s.guestId, set, mine]);
 
-  const look = guests.find((g) => g.id === s.guestId);
-  const ready = status === 'ready' && s.guest;
+  const guest = s.game?.guest;
+  if(!s.game || !guest) return <Redirect href="/" />;
+  const id=s.game.id;
 
-  const regenerate = () => {
-    if (s.regenLeft <= 0 || status === 'loading') return;
-    set({ regenLeft: s.regenLeft - 1 });
-    invite([s.guestId]);
+  // 다른 손님 맞이하기 (서버가 1회만 허락한다)
+  const reroll = async () => {
+    if (busy) return;
+    setBusy('reroll');
+    setError('');
+
+    try{
+      const v = await game.reroll(id);
+      set({ game: v, guestId: pickGuest([mine, s.guestId]).id });
+    } catch (e){
+      setError(errorMessage(e));
+    } finally {
+      setBusy(null);
+    }
   };
 
-  const home = () => {
-    reset();
-    router.replace('/');
+  // 상담 시작 → 서버가 손님의 첫 대사를 준다
+  const start = async () => {
+    if (busy) return;
+    setBusy('start');
+    setError('');
+    try {
+      const v = await game.start(id);
+      set({ game: v});
+      router.push('/talk');
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(null);
+    }
   };
 
   return (
     <Screen
       step="손님 맞이"
       glowAt="50% 34%"
-      footer={status === 'error' ? undefined : <PrimaryButton label="상담 시작하기" onPress={() => router.push('/talk')} disabled={!ready} />}>
+      footer={
+        busy === 'start' ? (
+          <Waiting text="손님이 자리에 앉고 있어요" />
+        ) : (
+          <>
+            {error ? <Text style={styles.error}>{error}</Text> : null}
+            <PrimaryButton label={error ? '다시 시도하기' : '상담 시작하기'} onPress={start} disabled={busy != null} />
+          </>
+        )
+      }>
       <View style={{ alignItems: 'center' }}>
         <Mirror width={236} height={316} style={{ justifyContent: 'flex-end' }}>
-          {ready && look ? <Image source={guestImage(look.id, 'worried')} style={styles.guest} resizeMode="contain" /> : null}
+          {s.guestId && busy !== 'reroll' ? (
+            <Image source={guestImage(s.guestId, 'worried')} style={styles.guest} resizeMode="contain" />
+          ) : null}
         </Mirror>
       </View>
 
-      {status === 'loading' ? <Waiting text="손님이 상담소로 오고 있어요" /> : null}
+      {busy === 'reroll' ? (
+        <Waiting text="다른 손님이 오고 있어요" />
+      ) : (
+        <GuestCard name={guest.name} age={guest.age} background={guest.role} reason={`${guest.background} ${guest.situation}`} />
+      )}
 
-      {status === 'error' ? (
-        <RetryCard title="손님을 모시지 못했어요" message={error} onRetry={() => invite([])} onQuit={home} />
-      ) : null}
-
-      {ready && s.guest ? (
-        <>
-          <GuestCard name={s.guest.name} age={s.guest.age} background={s.guest.background} reason={s.guest.reason} />
-          <Pressable
-            accessibilityRole="button"
-            accessibilityState={{ disabled: s.regenLeft <= 0 }}
-            disabled={s.regenLeft <= 0}
-            onPress={regenerate}
-            style={styles.regen}>
-            <Text style={[styles.regenText, s.regenLeft <= 0 && { color: C.sub }]}>다른 손님 맞이하기 ({s.regenLeft}회 남음)</Text>
-          </Pressable>
-        </>
+      {s.game.canReroll ? (
+        <Pressable accessibilityRole="button" disabled={busy !== null} onPress={reroll} style={styles.regen}>
+          <Text style={styles.regenText}>다른 손님 맞이하기 (1회)</Text>
+        </Pressable>
       ) : null}
     </Screen>
   );
@@ -101,4 +104,5 @@ const styles = StyleSheet.create({
   guest: { width: '100%', height: '92%' },
   regen: { height: 44, alignItems: 'center', justifyContent: 'center' },
   regenText: { fontSize: 14, color: C.ice },
+  error: { fontSize: 14, lineHeight: 21, color: C.danger, textAlign: 'center'},
 });

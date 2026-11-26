@@ -3,6 +3,8 @@ import { ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { game } from '@/api/game';
+import { useSession } from '@/state/session';
 import { C } from '@/theme/colors';
 import { CrayonFrame, crayonLine, plain } from '@/components/crayon';
 import { CRAYON } from '@/theme/fonts';
@@ -18,7 +20,16 @@ type Props = {
 
 // 모든 화면 공통 틀: 상단 바 + 내용 + 하단 버튼 영역 (FR-11: 모든 화면에 그만하기)
 export function Screen({ step, action = '그만하기', onAction, footer, children, glowAt = '50% 28%' }: Props) {
-  const quit = onAction ?? (() => router.replace('/'));
+  const { s } = useSession();
+  
+  // 그만하기 (FR-11): 진행 중인 판이 있으면 서버에도 알리고 처음 화면으로
+  const quit =
+    onAction ??
+    (() => {
+      if (s.game && !['done', 'quit', 'help'].includes(s.game.stage)) game.quit(s.game.id).catch(() => {});
+      router.replace('/');
+    });
+  
   return (
     <SafeAreaView
       style={[styles.root, { backgroundImage: `radial-gradient(ellipse 90% 45% at ${glowAt}, ${C.bgGlow} 0%, ${C.bg} 72%)` }]}>

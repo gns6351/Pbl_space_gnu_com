@@ -13,7 +13,8 @@ import { HAND } from '@/theme/fonts';
 // 04-3 손님 배웅. 조언이 적절했는지와 상관없이 모든 판에서 편해진 표정으로 배웅한다.
 export default function FarewellScreen() {
   const { s } = useSession();
-  const hasAdvice = s.highlights.length > 0;
+  // 서버가 조언이 있었으면 mirror, 없었으면 done 단계를 준다.
+  const hasAdvice = s.game?.stage === 'mirror';
   const next = () => router.replace(hasAdvice ? '/mirror-pick' : '/closing');
 
   return (

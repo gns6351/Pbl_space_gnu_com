@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { errorMessage, game } from '@/api/game';
 import { PrimaryButton, SecondaryButton } from '@/components/buttons';
 import { Mirror, mirrorFit, mirrorPanel } from '@/components/mirror';
 import { Screen } from '@/components/screen';
@@ -28,14 +29,38 @@ export default function MirrorCompareScreen() {
   const failed = s.returned === null;
   const fit = mirrorFit(text.length); // 점검 실패: 새 문장 없이 원문만
 
-  const finish = () => {
-    // TODO(서버 연동): 판단 저장 API에 decision, aiDraft(s.returned), edited(text)를 보낸다.
-    set({ decision, returned: text });
-    router.push('/closing');
+    const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
+
+  // 판단을 서버에 보낸다 (FR-09). 문장을 고쳤으면 고친 문장도 함께
+  const finish = async () => {
+    if (!decision || !s.game || sending) return;
+    setSending(true);
+    setError('');
+    try {
+      const edited = !failed && text.trim() !== s.returned ? text.trim() : undefined;
+      const v = await game.decision(s.game.id, VERDICT[decision], edited);
+      set({ game: v, decision, returned: text });
+      // 고친 문장에서 위험이 감지되면 도움 안내로 (FR-10)
+      router.push(v.stage === 'help' ? '/safety' : '/closing');
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
-    <Screen step="거울 2/2" glowAt="50% 46%" footer={<PrimaryButton label="마무리하기" onPress={finish} disabled={!decision} />}>
+    <Screen
+      step="거울 2/2"
+      glowAt="50% 46%"
+      footer={
+        <>
+          {error ? <Text style={styles.error}>{error}</Text> : null}
+          <PrimaryButton label={sending ? '기록하는 중…' : error ? '다시 시도하기' : '마무리하기'} onPress={finish} disabled={!decision || sending} />
+        </>
+      }>
+
       <View style={{ gap: 8 }}>
         <Ctx label="처음 적은 걱정" text={s.worry || '[걱정]'} />
         <Ctx label="손님에게 한 말" text={s.highlight ?? '[하이라이트 원문]'} />
@@ -83,7 +108,11 @@ function Ctx({ label, text }: { label: string; text: string }) {
   );
 }
 
+// 앱의 선택 → 서버의 verdict
+const VERDICT = { 수용: 'accept', 수정: 'modify', 보류: 'hold', 거부: 'reject' } as const;
+
 const styles = StyleSheet.create({
+  error: { fontSize: 14, lineHeight: 21, color: C.danger, textAlign: 'center' },
   ctx: { paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12, borderWidth: 1, borderColor: C.border, backgroundColor: 'rgba(255,255,255,0.04)', gap: 2 },
   mirrorLabel: { fontSize: 17, fontFamily: HAND, color: '#3E5366', letterSpacing: 0.6 },
   mirrorText: { width: '100%', minHeight: 110, color: C.onGlass, textAlign: 'center', textAlignVertical: 'center' },

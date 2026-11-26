@@ -2,10 +2,12 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { errorMessage, game } from '@/api/game';
 import { PrimaryButton } from '@/components/buttons';
 import { CrayonFrame, plain } from '@/components/crayon';
 import { Screen } from '@/components/screen';
 import { Segmented } from '@/components/segmented';
+import { Waiting } from '@/components/waiting';
 import { useSession } from '@/state/session';
 import { C } from '@/theme/colors';
 import { CRAYON, HAND } from '@/theme/fonts';
@@ -20,24 +22,51 @@ type Mode = 'write' | 'example';
 
 // 02 접수 · 걱정 입력 (FR-02: 5~300자 또는 예시 3종)
 export default function WorryScreen() {
-  const { set } = useSession();
+  const { s, set } = useSession();
   const [mode, setMode] = useState<Mode>('write');
   const [text, setText] = useState('');
   const [picked, setPicked] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);  // 서버가 손님을 만드는 중
+  const [error, setError] = useState('');
 
   const trimmed = text.trim();
   const tooShort = mode === 'write' && trimmed.length > 0 && trimmed.length < 5;
-  const valid = mode === 'example' ? !!picked : trimmed.length >= 5 && trimmed.length <= 300;
+  const valid = mode === 'example' ? !!picked : trimmed.length <= 300;
   const worry = mode === 'example' ? picked ?? '' : trimmed;
 
-  const next = () => {
-    // 걱정을 바꿔 다시 오면 손님도 새로 맞이한다
-    set({ worry, guest: null, guestId: null, sessionId: null, firstTurn: null, regenLeft: 1, highlights: [] });
-    router.push('/guest');
+  const next = async () => {
+    if (sending) return;
+    setSending(true);
+    setError('');
+
+    try{
+      // 1) 새 판을 만든다. 걱정을 바꿔 다시 와도 새 판으로 시작한다.
+      const created = await game.create(s.saveConsent);
+      // 2) 걱정을 내보낸다. 서버가 위험 여부를 보고, 손님을 만든다.
+      const v = await game.worry(created.id, worry);
+      set({ worry, game: v, guestId: null, pickedHighlightId: null });
+      // 위험이 감지되면 도움 안내로, 아니면 손님 맞이로
+      router.push(v.stage === 'help' ? '/safety' : '/guest');
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
-    <Screen step="접수" footer={<PrimaryButton label="손님 맞이하기" onPress={next} disabled={!valid} />}>
+    <Screen
+      step="접수"
+      footer={
+        sending ? (
+          <Waiting text="손님이 상담소로 오고 있어요" />
+        ) : (
+          <>
+            {error ? <Text style={styles.warn}>{error}</Text> : null}
+            <PrimaryButton label={error ? '다시 시도하기' : '손님 맞이하기'} onPress={next} disabled={!valid} />
+          </>
+        )
+    }>
       <View style={{ gap: 6 }}>
         <Text style={styles.title}>요즘 마음에 걸리는 일이 있나요?</Text>
         <Text style={styles.body}>털어놓은 고민을 닮은 손님이 상담소를 찾아올 거예요.</Text>
