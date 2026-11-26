@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 
+import { game } from '@/api/game';
 import { PrimaryButton, SecondaryButton } from '@/components/buttons';
 import { Mirror, mirrorFit, mirrorPanel } from '@/components/mirror';
 import { Screen } from '@/components/screen';
@@ -36,7 +37,9 @@ export default function ClosingScreen() {
   };
 
   const remove = async () => {
-    // 방금 저장한 카드도 지운다. TODO(서버 연동): DELETE /game/sessions/:id 로 세션 기록을 지운다.
+    // 서버의 이 판 기록을 지운다 (FR-11). 실패해도 앱은 처음으로 간다
+    if (s.game) game.remove(s.game.id).catch(() => {});
+    // 방금 저장한 카드도 지운다
     const latest = cards.find((c) => c.text === s.returned);
     if (latest) await removeCard(latest.id);
     restart();

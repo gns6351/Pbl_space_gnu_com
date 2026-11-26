@@ -11,7 +11,7 @@
 | 폴더 | 내용 | 상태 |
 |---|---|---|
 | [`ai-server/`](ai-server/) | AI 서버: 손님 생성·손님 대사·조언 판정·자기 지향 변환·점검·위험 감지 (Node.js + Gemini) | 요구사항의 AI 부분 구현 완료, 실제 Gemini로 검증 |
-| [`app/`](app/) | Android 앱 (React Native·Expo): 접수·손님 맞이·상담·거울·마무리 화면, 캐릭터·카드 보관함·설정 | 화면 구현 완료, 임시 API로 한 판 진행 가능. 서버 연동 예정 |
+| [`app/`](app/) | Android 앱 (React Native·Expo): 접수·손님 맞이·상담·거울·마무리 화면, 캐릭터·카드 보관함·설정 | 화면 구현 완료, AI 서버와 연결해 한 판 완주 확인 |
 
 ## 빠르게 시작하기 (AI 서버)
 
@@ -31,7 +31,7 @@ npm install
 npx expo start -c   # a: 안드로이드 에뮬레이터, w: 웹
 ```
 
-지금은 앱 안의 임시 API(`app/src/api/mock.ts`)로 움직입니다. AI 서버와 연결하려면 `app/src/api/config.ts`의 `useMock`을 `false`로 바꾸고 `app/.env`에 `EXPO_PUBLIC_API_URL=서버 주소`를 넣습니다.
+앱은 AI 서버와 함께 써야 합니다. 서버를 먼저 켜고(`ai-server`에서 `npm start`), `app/.env`에 `EXPO_PUBLIC_API_URL=서버 주소`를 넣습니다. 에뮬레이터는 `http://10.0.2.2:3000/api/game`, 실제 폰은 서버를 켤 때 화면에 나오는 같은 와이파이 주소를 씁니다. 아이폰 Expo Go는 처음 열 때 **로컬 네트워크 허용**이 필요합니다.
 
 ## 문서
 

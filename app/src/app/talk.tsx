@@ -1,83 +1,102 @@
 import { Redirect, router } from 'expo-router';
-
 import { ComponentRef, useRef, useState } from 'react';
 import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { api, errorMessage, Turn } from '@/api';
+import { errorMessage, game, GameError, newRequestId, View as GameView } from '@/api/game';
 import { Bubble } from '@/components/bubble';
 import { PrimaryButton } from '@/components/buttons';
+import { CrayonFrame, crayonLine, plain } from '@/components/crayon';
 import { RetryCard } from '@/components/retry';
 import { TypingBubble } from '@/components/waiting';
 import { guestImage } from '@/data/guests';
 import { useSession } from '@/state/session';
 import { C } from '@/theme/colors';
 import { CRAYON, HAND } from '@/theme/fonts';
-import { CrayonFrame, crayonLine, plain } from '@/components/crayon';
 
-type Msg = { from: 'guest' | 'me'; text: string; highlight?: boolean };
+type Pending = { input: { choiceId: string } | { text: string }; text: string, rid: string };
 
-// 04 상담 (FR-04~07). 손님 대사와 선택지는 상담 턴 API가 만든다.
+// 04 상담 (FR-04~07). 손님 대사·선택지·조언 판정·위험 감지는 모두 서버가 한다.
 export default function TalkScreen() {
   const { s, set } = useSession();
-  const [cur, setCur] = useState<Turn | null>(s.firstTurn);
-  const [turnNo, setTurnNo] = useState(1);
-  const [msgs, setMsgs] = useState<Msg[]>(s.firstTurn?.line ? [{ from: 'guest', text: s.firstTurn.line }] : []);
   const [draft, setDraft] = useState('');
   const [freeMode, setFreeMode] = useState(false);
-  const [waiting, setWaiting] = useState(false); // 손님이 대답하는 중: 입력 잠금 (NFR-07)
-  const [failed, setFailed] = useState<{ text: string; picked: boolean; message: string } | null>(null);
+  const [pending, setPending] = useState<Pending | null>(null); // 서버 대답을 기다리는 내 말
+  const [waiting, setWaiting] = useState(false);  // 기다리는 동안 입력 잠금 (FR-04)
+  const [failed, setFailed] = useState('');
   const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
 
-  if (!s.sessionId || !cur) return <Redirect href="/" />;
-
-  const askAdvice = cur.askAdvice;
+  const v = s.game;
+  if (!v || !v.turn) return <Redirect href="/" />;
+  const id = v.id;
+  const turn = v.turn;
+  const askAdvice = turn.kind === 'advice';
   const showInput = askAdvice || freeMode;
-  const done = cur.done;
-  const lastGuestLine = [...msgs].reverse().find((m) => m.from === 'guest')?.text ?? '';
   const scrollDown = () => setTimeout(() => scroll.current?.scrollToEnd({ animated: true }), 50);
 
-  // 서버에 보낸다. retry=true면 이미 화면에 올린 내 말을 다시 보내는 것
-  const request = async (text: string, picked: boolean, retry = false) => {
-    if (waiting) return;
-    if (!retry) {
-      setMsgs((m) => [...m, { from: 'me', text }]);
-      setDraft('');
-      setFreeMode(false);
-    }
-    setFailed(null);
+  // 서버가 돌려준 상태에 따라 다음 화면으로
+  const apply = (next: GameView) => {
+    set({ game: next});
+    if (next.stage === 'help') router.replace('/safety'); // 위험 감지 (FR-10)
+    else if (next.stage === 'mirror' || next.stage === 'done') router.replace('/farewell'); // 12턴 자동 종료
+  };
+
+  const request = async (p: Pending) => {
+    setPending(p);
     setWaiting(true);
+    setFailed('');
+    setDraft('');
     scrollDown();
-    const before = lastGuestLine;
+
     try {
-      const r = await api.sendTurn(s.sessionId!, { text, picked });
-      // 위험 발화면 대화를 멈추고 안내 화면으로. 이 판의 역할극은 다시 이어지지 않는다 (FR-10)
-      if (r.risk) {
-        router.replace('/safety');
-        return;
-      }
-      if (r.highlight) {
-        // 거울 앞에서 고를 수 있게 모아 둔다. 바로 앞의 손님 말도 함께 남긴다 (FR-06)
-        set({ highlights: [...s.highlights, { id: Date.now(), text, before }] });
-        setMsgs((m) => m.map((x, i) => (i === m.length - 1 ? { ...x, highlight: true } : x)));
-      }
-      if (r.next.line) setMsgs((m) => [...m, { from: 'guest', text: r.next.line! }]);
-      setCur(r.next);
-      setTurnNo((n) => n + 1);
+      apply(await game.turn(id, turn.n, p.input, p.rid));
+      setPending(null);
+
     } catch (e) {
-      setFailed({ text, picked, message: errorMessage(e) });
+      // 이미 처리된 턴이면 최신 상태를 다시 받아 온다
+      if (e instanceof GameError && (e.code === 'STALE_TURN' || e.code === 'WRONG_STAGE')) {
+        try {
+          apply(await game.get(id));
+          setPending(null);
+          return;
+
+        } catch {}
+      }
+      setFailed(errorMessage(e));
     } finally {
       setWaiting(false);
       scrollDown();
     }
   };
 
-  const send = (text: string, picked: boolean) => {
-    if (!text.trim()) return;
-    request(text.trim(), picked);
+  const pick = (c: { id: string; text: string }) => request({ input: { choiceId: c.id }, text: C.text, rid: newRequestId() });
+  const sendText = () => {
+    const text = draft.trim();
+
+    if (text) request({ input :{ text }, text, rid: newRequestId() });
   };
 
-  const finish = () => router.push('/farewell');
+  // 마무리 (언제든, FR-07). 조언이 있었으면 거울로, 없으면 마무리 화면으로 
+  const finish = async () => {
+    if (waiting) return;
+    setWaiting(true);
+
+    try{
+      const next = await game.end(id);
+      set({ game: next });
+      router.replace('/farewell');
+    } catch (e) {
+      setFailed(errorMessage(e));
+    } finally {
+      setWaiting(false);
+    }
+  };
+
+  // 그만하기 (FR-11). 서버에 알리고 바로 처음 화면으로
+  const quit = () => {
+    game.quit(id).catch(() => {});
+    router.replace('/');
+  }
 
   return (
     <SafeAreaView style={styles.root}>
@@ -87,70 +106,79 @@ export default function TalkScreen() {
             <Image source={guestImage(s.guestId)} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
           </View>
         ) : null}
-        <View style={{ flex: 1 }}>
-          <Text style={styles.name}>{s.guest?.name ?? '손님'}</Text>
-          <Text style={styles.meta}>{waiting ? '대답하는 중…' : `상담 중 · ${turnNo}번째 대화`}</Text>
+      
+        <View style={{ flex: 1}}>
+          <Text style={styles.name}>{v.guest?.name ?? '손님'}</Text>
+          <Text style={styles.meta}>{waiting ? '대답하는 중...' : `상담 중 · ${turn.n}번째 대화`}</Text>
         </View>
-        <Pressable accessibilityRole="button" onPress={finish} style={[styles.pill, CRAYON && plain]}>
+
+        <Pressable accessibilityRole='button' onPress={finish} style={[styles.pill, CRAYON && plain]}>
           {CRAYON ? <CrayonFrame fill="rgba(255,255,255,0.04)" stroke={crayonLine} strokeWidth={1.8} radius={22} seed={3} grainOpacity={0.1} grainTone="light" /> : null}
           <Text style={styles.pillText}>마무리</Text>
         </Pressable>
-        <Pressable accessibilityRole="button" onPress={() => router.replace('/')} style={[styles.pill, CRAYON && plain]}>
+
+        <Pressable accessibilityRole="button" onPress={quit} style={[styles.pill, CRAYON && plain]}>
           {CRAYON ? <CrayonFrame fill="rgba(255,255,255,0.04)" stroke={crayonLine} strokeWidth={1.8} radius={22} seed={8} grainOpacity={0.1} grainTone="light" /> : null}
           <Text style={styles.pillText}>그만하기</Text>
         </Pressable>
       </View>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView ref={scroll} contentContainerStyle={styles.list}>
-          {msgs.map((m, i) =>
-            m.from === 'guest' ? (
-              <Bubble key={i} from="guest" text={m.text} seed={i + 1} />
-            ) : (
-              <View key={i} style={{ alignItems: 'flex-end', gap: 4 }}>
-                <Bubble from="me" text={m.text} highlight={m.highlight} seed={i + 1} />
-                {m.highlight ? <Text style={styles.remember}>거울이 기억할게요</Text> : null}
+        <ScrollView ref={scroll} contentContainerStyle={styles.list} onContentSizeChange={scrollDown}>
+          {/* 지난 대화 */}
+          {(v.transcript ?? []).map((t) => (
+            <View key={t.n} style={{ gap: 12 }}>
+              <Bubble from="guest" text={t.guest} seed={t.n * 2} />
+              <View style={{ alignItems: 'flex-end', gap: 4 }}>
+                <Bubble from="me" text={t.player.text} highlight={t.highlighted} seed={t.n * 2 + 1} />
+                {t.highlighted ? <Text style={styles.remember}>거울이 기억할게요</Text> : null}
               </View>
-            ),
-          )}
-          {waiting ? <TypingBubble /> : null}
+            </View>
+          ))}
+          {/* 지금 손님 대사 */}
+          <Bubble from="guest" text={turn.guest} seed={turn.n * 2} />
+          {/* 보내는 중인 내 말 + 손님이 대답하는 중 */}
+          {pending ? <Bubble from="me" text={pending.text} seed={turn.n * 2 + 1} /> : null}
+          {waiting && pending ? <TypingBubble /> : null}
         </ScrollView>
 
         {failed ? (
           <View style={styles.composer}>
             <RetryCard
               title="손님이 잠깐 말을 잇지 못했어요"
-              message={failed.message}
-              retryLabel="다시 보내기"
-              onRetry={() => request(failed.text, failed.picked, true)}
+              message={failed}
+              retryLabel={pending ? '다시 보내기' : '다시 시도하기'}
+              onRetry={() => (pending ? request(pending) : setFailed(''))}
             />
-          </View>
-        ) : done ? (
-          <View style={styles.composer}>
-            <PrimaryButton label="마무리하기" onPress={finish} />
           </View>
         ) : (
           <View style={[styles.composer, waiting && { opacity: 0.45 }]} pointerEvents={waiting ? 'none' : 'auto'}>
+            {/* 손님이 마무리를 제안하면 마무리 버튼을 크게 보여 준다. 대화를 이어 가도 된다 */}
+            {turn.suggestEnd ? <PrimaryButton label="마무리하기" onPress={finish} /> : null}
             {showInput ? (
               <>
                 <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-end' }}>
                   {/* 안쪽 여백은 바깥 틀에 둔다. 여러 줄이 되어 스크롤돼도 글이 테두리 밖으로 나가지 않게 */}
                   <View style={[styles.inputBox, CRAYON && plain]}>
-                  {CRAYON ? <CrayonFrame fill="rgba(234,244,255,0.06)" stroke="#CFE3F5" radius={22} seed={5} grainOpacity={0.05} grainTone="light" /> : null}
-                  <TextInput
-                    value={draft}
-                    onChangeText={setDraft}
-                    placeholder={askAdvice ? '손님에게 조언해 주세요' : '손님에게 하고 싶은 말'}
-                    placeholderTextColor={C.sub}
-                    multiline
-                    maxLength={300}
-                    editable={!waiting}
-                    style={styles.input}
-                    textAlignVertical="center"
-                    accessibilityLabel="답장 입력"
-                  />
+                    {CRAYON ? <CrayonFrame fill="rgba(234,244,255,0.06)" stroke="#CFE3F5" radius={22} seed={5} grainOpacity={0.05} grainTone="light" /> : null}
+                    <TextInput
+                      value={draft}
+                      onChangeText={setDraft}
+                      placeholder={askAdvice ? '손님에게 조언해 주세요' : '손님에게 하고 싶은 말'}
+                      placeholderTextColor={C.sub}
+                      multiline
+                      maxLength={300}
+                      editable={!waiting}
+                      style={styles.input}
+                      textAlignVertical="center"
+                      accessibilityLabel="답장 입력"
+                    />
                   </View>
-                  <Pressable accessibilityRole="button" accessibilityLabel="보내기" onPress={() => send(draft, false)} style={[styles.send, CRAYON && plain, CRAYON && { boxShadow: '0 0 16px rgba(170,215,255,0.45)' }]}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="보내기"
+                    onPress={sendText}
+                    style={[styles.send, CRAYON && plain, CRAYON && { boxShadow: '0 0 16px rgba(170,215,255,0.45)' }]}>
                     {CRAYON ? <CrayonFrame fill={C.glass} stroke={C.onGlass} radius={26} seed={9} grainOpacity={0.07} /> : null}
                     <Text style={{ color: C.onGlass, fontSize: 18, fontWeight: '700' }}>→</Text>
                   </Pressable>
@@ -164,10 +192,10 @@ export default function TalkScreen() {
               </>
             ) : (
               <View style={{ gap: 8 }}>
-                {cur.choices.map((c) => (
-                  <Pressable key={c} accessibilityRole="button" onPress={() => send(c, true)} style={[styles.choice, CRAYON && plain]}>
-                    {CRAYON ? <CrayonFrame fill="rgba(255,255,255,0.04)" stroke={crayonLine} strokeWidth={1.8} radius={24} seed={c.length} grainOpacity={0.08} grainTone="light" /> : null}
-                    <Text style={styles.choiceText}>{c}</Text>
+                {turn.choices.map((c) => (
+                  <Pressable key={c.id} accessibilityRole="button" onPress={() => pick(c)} style={[styles.choice, CRAYON && plain]}>
+                    {CRAYON ? <CrayonFrame fill="rgba(255,255,255,0.04)" stroke={crayonLine} strokeWidth={1.8} radius={24} seed={c.text.length} grainOpacity={0.08} grainTone="light" /> : null}
+                    <Text style={styles.choiceText}>{c.text}</Text>
                   </Pressable>
                 ))}
                 <Pressable accessibilityRole="button" onPress={() => setFreeMode(true)} style={styles.textBtn}>
@@ -179,7 +207,7 @@ export default function TalkScreen() {
         )}
       </KeyboardAvoidingView>
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({

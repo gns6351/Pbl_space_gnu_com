@@ -17,13 +17,14 @@ export default function MirrorPickScreen() {
   const { s, set } = useSession();
   const { playerId } = useProfile();
   // 하나뿐이면 미리 골라 둔다
-  const [pickedId, setPickedId] = useState<number | null>(s.highlights.length === 1 ? s.highlights[0].id : null);
-  const picked = s.highlights.find((h) => h.id === pickedId) ?? null;
+  const options = s.game?.mirrorOptions ?? []; // 서버가 준 기록장 (직접 쓴 조언들)
+  const [pickedId, setPickedId] = useState<string | null>(options.length === 1 ? options[0].id : null);
+  const picked = options.find((h) => h.id === pickedId) ?? null;
 
   const go = () => {
     if (!picked) return;
     // 고른 말을 들고 거울이 비추는 화면으로. 반환 API는 그 화면에서 기다린다
-    set({ highlight: picked.text, returned: null });
+        set({ highlight: picked.text, pickedHighlightId: picked.id, returned: null });
     router.push('/mirror-reflect');
   };
 
@@ -47,7 +48,7 @@ export default function MirrorPickScreen() {
         <Text style={styles.body}>오늘 손님에게 직접 건넨 말 중 하나를 골라 보세요.</Text>
       </View>
       <View style={{ gap: 10 }}>
-        {s.highlights.map((h, i) => {
+        {options.map((h, i) => {
           const on = h.id === pickedId;
           return (
             <Pressable
@@ -67,7 +68,7 @@ export default function MirrorPickScreen() {
                   grainTone="light"
                 />
               ) : null}
-              <Text style={styles.before} numberOfLines={2}>손님: {h.before}</Text>
+              <Text style={styles.before} numberOfLines={2}>손님: {h.guestBefore}</Text>
               <Text style={styles.said}>"{h.text}"</Text>
             </Pressable>
           );

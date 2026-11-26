@@ -1,22 +1,17 @@
 import { createContext, ReactNode, useContext, useMemo, useState } from 'react';
 
-import type { GuestInfo, Turn } from '@/api';
 
-// 직접 쓴 조언 하나. before는 그 말을 하게 된 바로 앞의 손님 말 (거울 앞에서 상황을 떠올리게 한다)
-export type Highlight = { id: number; text: string; before: string };
+import type { View } from '@/api/game';
 
-// 한 판 동안 화면들이 함께 쓰는 값. 서버 연동 전까지는 앱 안에서만 들고 있는다.
+// 한 판 동안 화면들이 함께 쓰는 값. 진행 상태는 서버가 돌려준 game(view)이 기준이다.
 type Session = {
-  saveConsent: boolean;
+  saveConsent: boolean; // 카드 저장 동의
   worry: string;
-  guestId: string | null; // 손님 일러스트
-  sessionId: string | null; // 서버의 이번 판 번호
-  guest: GuestInfo | null; // 손님 생성 API가 만든 손님
-  firstTurn: Turn | null; // 손님의 첫 대사
-  regenLeft: number;
-  highlights: Highlight[]; // 기록장에 담긴 직접 쓴 조언들 (한 판에 여러 개)
-  highlight: string | null; // 그중 거울 앞에서 고른 하나
-  returned: string | null; // 거울이 돌려준 말
+  guestId: string | null; // 손님 그림 (앱이 고른다)
+  game: View | null; // 서버가 마지막으로 돌려준 화면 상태
+  pickedHighlightId: string | null; // 거울 앞에서 고른 조언 번호
+  highlight: string | null; // 고른 조언 원문
+  returned: string | null; // 거울이 돌려준 말 (점검 실패면 null)
   decision: '수용' | '수정' | '보류' | '거부' | null;
 };
 
@@ -24,11 +19,8 @@ const initial: Session = {
   saveConsent: false,
   worry: '',
   guestId: null,
-  sessionId: null,
-  guest: null,
-  firstTurn: null,
-  regenLeft: 1,
-  highlights: [],
+  game: null,
+  pickedHighlightId: null,
   highlight: null,
   returned: null,
   decision: null,
