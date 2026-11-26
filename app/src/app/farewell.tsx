@@ -19,9 +19,9 @@ export default function FarewellScreen() {
 
   return (
     <Screen step="손님 배웅" glowAt="50% 42%" footer={<PrimaryButton label={hasAdvice ? '거울 앞에 서기' : '마무리하기'} onPress={next} />}>
-      <Text style={styles.title}>[손님 이름]이 한결 편해 보여요</Text>
+      <Text style={styles.title}>{s.game?.guest?.name ? `${s.game.guest.name} 님이` : '손님이'} 한결 편해 보여요</Text>
       <View style={{ alignItems: 'center', gap: 10 }}>
-        {/* 손님이 직접 건네는 인사. TODO(서버 연동): 손님의 마지막 인사말로 바꾼다 */}
+        {/* 손님이 직접 건네는 인사 */}
         <Bubble from="guest" text="오늘 이야기 들어 줘서 고마워요." seed={4} style={{ alignSelf: 'center' }} />
         <Mirror width={236} height={316} style={{ justifyContent: 'flex-end' }}>
           {s.guestId ? (
