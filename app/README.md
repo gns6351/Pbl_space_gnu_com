@@ -1,56 +1,42 @@
-# Welcome to your Expo app 👋
+# 거울상담소 앱
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+거울상담소의 Android 앱입니다(React Native · Expo). 손님 생성·대화·조언 판정·거울 변환 같은 AI 처리는 모두 [`ai-server`](../ai-server/)가 하고, 앱은 화면과 기기 저장만 맡습니다. **앱에는 API 키를 넣지 않습니다.**
 
-## Get started
+## 실행
 
-1. Install dependencies
-
+1. AI 서버를 먼저 켭니다: `cd ai-server && npm start` (키가 없으면 모의 모드)
+2. `app/.env` 파일을 만들고 서버 주소를 넣습니다. 이 파일은 커밋하지 않습니다.
+   ```
+   EXPO_PUBLIC_API_URL=http://10.0.2.2:3000/api/game
+   ```
+   - 에뮬레이터: `10.0.2.2`가 내 PC를 가리킵니다.
+   - 실제 폰: 서버를 켤 때 나오는 같은 와이파이 주소를 씁니다. 아이폰 Expo Go는 처음 열 때 **로컬 네트워크 허용**이 필요합니다.
+   - 학교·회사 와이파이는 기기끼리 접속을 막을 수 있습니다. 안 되면 폰 핫스팟을 씁니다.
+3. 앱을 켭니다.
    ```bash
    npm install
+   npx expo start -c   # a: 안드로이드 에뮬레이터, QR: 폰의 Expo Go
    ```
+   웹(`w`)은 서버가 막고 있어 연결되지 않습니다.
 
-2. Start the app
+## 화면 흐름
 
-   ```bash
-   npx expo start
-   ```
+처음 실행: 내 캐릭터 고르기 → 홈 → 동의(처음 한 번) → 걱정 입력 → 손님 맞이 → 상담 → 손님 배웅 → 거울(조언 고르기 → 비추는 중 → 비교·판단) → 마무리. 위험이 감지되면 어느 단계에서든 도움 안내로 갑니다.
 
-In the output, you'll find options to open the app in a
+## 폴더 구조
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+app/
+├── src/
+│   ├── app/          화면 (파일 이름 = 화면 주소)
+│   ├── api/game.ts   AI 서버와 주고받는 부분 (ai-server/docs/api.md 기준)
+│   ├── components/   공통 부품 (거울, 버튼, 말풍선, 크레파스 테두리 등)
+│   ├── state/        한 판 상태(session), 기기 저장(profile: 캐릭터·동의·카드)
+│   ├── data/         손님·플레이어 그림 목록
+│   └── theme/        색, 글꼴, 크레파스 스위치(CRAYON)
+└── assets/           손님 그림(guests), 질감(textures)
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+## 기기에만 저장하는 것
 
-### Other setup steps
-
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+내 캐릭터, 동의 상태, 카드 보관함은 이 폰(AsyncStorage)에만 저장합니다.
